@@ -1,0 +1,13 @@
+ignored-entities:
+  - AREA_EFFECT_CLOUD
+  # Hanging entities (cannot be spawned without a block)
+  - PAINTING
+  - LEASH_HITCH
+  - ITEM_FRAME
+  # No 👀
+  - WITHER
+  - ENDER_DRAGON
+  - GHAST
+  - GIANT
+  - FIREBALL
+items-per-tick: 4
