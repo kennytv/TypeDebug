@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -104,6 +105,8 @@ public final class TypeDebugPlugin extends JavaPlugin implements Listener {
             } catch (final ReflectiveOperationException e) {
                 e.printStackTrace();
             }
+        } else if (args[0].equalsIgnoreCase("blocksbutinbad")) {
+            setBlocksButInBad(player);
         } else if (args[0].equalsIgnoreCase("entities")) {
             spawnEntities(player);
         } else if (args[0].equalsIgnoreCase("items")) {
@@ -145,6 +148,35 @@ public final class TypeDebugPlugin extends JavaPlugin implements Listener {
 
             final Block blockAt = world.getBlockAt(x, y, z);
             setTypeAndData.invoke(blockAt, blockState, false);
+        }
+    }
+
+    private void setBlocksButInBad(final Player player) {
+        final World world = player.getWorld();
+        final Location location = player.getLocation();
+        boolean forwards = false;
+        final int y = location.getBlockY();
+        int i = 0;
+        int x = location.getBlockX();
+        int z = location.getBlockZ();
+        final Iterator<Material> iterator = Arrays.stream(Material.values()).iterator();
+        while (iterator.hasNext()) {
+            final Material material = iterator.next();
+            if (!material.isBlock()) {
+                continue;
+            }
+            if (i++ == 15) {
+                i = 0;
+                forwards = !forwards;
+                z += 2;
+            }
+            if (forwards) {
+                x += 2;
+            } else {
+                x -= 2;
+            }
+            final Block blockAt = world.getBlockAt(x, y, z);
+            blockAt.setType(material, false);
         }
     }
 
