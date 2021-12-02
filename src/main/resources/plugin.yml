@@ -1,10 +1,10 @@
 name: ${project.name}
 version: ${project.version}
-main: eu.kennytv.blockdebug.TypeDebugPlugin
+main: eu.kennytv.typedebug.TypeDebugPlugin
 author: kennytv
 api-version: 1.13 # thanks md_5, very cool
 
 commands:
   start:
-    usage: /start <blocks/entities/items>
+    usage: /start <blocks/entities/items/particles/cloud>
     permission: blockdebug.start

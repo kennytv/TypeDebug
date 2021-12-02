@@ -1,4 +1,4 @@
-package eu.kennytv.blockdebug;
+package eu.kennytv.typedebug.util;
 
 import org.bukkit.Bukkit;
 
