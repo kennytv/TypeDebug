@@ -1,12 +1,18 @@
 package eu.kennytv.blockdebug;
 
+import org.bukkit.Bukkit;
+import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Particle;
+import org.bukkit.Vibration;
 import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.AreaEffectCloud;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Item;
@@ -32,6 +38,7 @@ import java.util.stream.Collectors;
 
 public final class TypeDebugPlugin extends JavaPlugin implements Listener {
 
+    private static final List<String> COMPLECTIONS = Arrays.asList("entities", "blocks", "items", "particles", "cloud");
     private static final boolean HAS_ITEM_GETKEY = has(Item.class, "getKey");
     private static final boolean HAS_MATERIAL_ISAIR = has(Material.class, "isAir");
     private static final boolean HAS_ENTITY_SETGRAVITY = has(Entity.class, "setGravity");
@@ -111,10 +118,74 @@ public final class TypeDebugPlugin extends JavaPlugin implements Listener {
             spawnEntities(player);
         } else if (args[0].equalsIgnoreCase("items")) {
             spawnItems(player);
+        } else if (args[0].equalsIgnoreCase("particles")) {
+            spawnParticles(player, false);
+        } else if (args[0].equalsIgnoreCase("cloud")) {
+            spawnParticles(player, true);
         } else {
             return false;
         }
         return true;
+    }
+
+    private void spawnParticles(final Player player, final boolean areaEffectCloud) {
+        final World world = player.getWorld();
+        final Location location = player.getLocation();
+        final Particle[] particles = Particle.values();
+        final AreaEffectCloud cloud;
+        if (areaEffectCloud) {
+            cloud = (AreaEffectCloud) world.spawnEntity(location, EntityType.AREA_EFFECT_CLOUD);
+            cloud.setDuration(particles.length * 4);
+            cloud.setDurationOnUse(0);
+            cloud.setRadiusOnUse(0);
+        } else {
+            cloud = null;
+        }
+
+        new BukkitRunnable() {
+            private int i;
+
+            @Override
+            public void run() {
+                if (i == particles.length || !player.isOnline()) {
+                    cancel();
+                    return;
+                }
+
+                final Particle particle = particles[i++];
+                if (particle.name().startsWith("LEGACY_")) {
+                    // ok Spigot
+                    cancel();
+                    return;
+                }
+
+
+                getLogger().info("Spawning " + particle.name());
+                final Object data;
+                if (particle.getDataType() == BlockData.class) {
+                    data = Bukkit.createBlockData(Material.SAND);
+                } else if (particle.getDataType() == ItemStack.class) {
+                    data = new ItemStack(Material.STICK);
+                } else if (particle.getDataType() == Particle.DustOptions.class) {
+                    data = new Particle.DustOptions(Color.RED, 1);
+                } else if (particle.getDataType().getSimpleName().equals("Vibration")) {
+                    data = new Vibration(location.clone().add(3, 3, 3), new Vibration.Destination.EntityDestination(player), 20);
+                } else if (particle.getDataType().getSimpleName().equals("DustTransition")) {
+                    data = new Particle.DustTransition(Color.RED, Color.BLUE, 1);
+                } else if (particle.getDataType() == Void.class) {
+                    data = null;
+                } else {
+                    getLogger().severe("Missing data for " + particle.name() + " - " + particle.getDataType().getSimpleName());
+                    return;
+                }
+
+                if (areaEffectCloud) {
+                    cloud.setParticle(particle, data);
+                } else {
+                    world.spawnParticle(particle, location, 5, 0.3, 0.3, 0.3, 0, data);
+                }
+            }
+        }.runTaskTimer(this, 4, 4);
     }
 
     private void setBlocks(final Player player) throws ReflectiveOperationException {
@@ -286,9 +357,9 @@ public final class TypeDebugPlugin extends JavaPlugin implements Listener {
     @Override
     public List<String> onTabComplete(final @NotNull CommandSender sender, final @NotNull Command command, final @NotNull String alias, final String[] args) {
         if (args.length == 0) {
-            return Arrays.asList("entities", "blocks", "items");
+            return COMPLECTIONS;
         } else if (args.length == 1) {
-            return StringUtil.copyPartialMatches(args[0], Arrays.asList("entities", "blocks", "items"), new ArrayList<>());
+            return StringUtil.copyPartialMatches(args[0], COMPLECTIONS, new ArrayList<>());
         }
         return Collections.emptyList();
     }
