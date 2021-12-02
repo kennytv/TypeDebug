@@ -39,8 +39,8 @@ public final class TypeDebugPlugin extends JavaPlugin implements Listener {
     private static final List<String> COMPLETIONS = Arrays.asList("entities", "blocks", "items", "particles", "cloud");
     private static final boolean HAS_ITEM_GETKEY = has(Item.class, "getKey");
     private static final boolean HAS_MATERIAL_ISAIR = has(Material.class, "isAir");
-    private static final boolean HAS_ENTITY_SETGRAVITY = has(Entity.class, "setGravity");
-    private static final boolean HAS_ENTITY_SETINVULNERABLE = has(Entity.class, "setInvulnerable");
+    private static final boolean HAS_ENTITY_SETGRAVITY = has(Entity.class, "setGravity", boolean.class);
+    private static final boolean HAS_ENTITY_SETINVULNERABLE = has(Entity.class, "setInvulnerable", boolean.class);
     private static final Version VERSION;
     private final Set<EntityType> ignoredEntityTypes = EnumSet.noneOf(EntityType.class);
     private int itemsPerTick;
