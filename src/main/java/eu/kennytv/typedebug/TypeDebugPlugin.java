@@ -8,7 +8,6 @@ import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Item;
@@ -20,30 +19,27 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.StringUtil;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.File;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import static eu.kennytv.typedebug.util.ReflectionUtil.has;
 
 public final class TypeDebugPlugin extends JavaPlugin implements Listener {
 
-    private static final List<String> COMPLETIONS = Arrays.asList("entities", "blocks", "items", "particles", "cloud");
+    private static final List<String> COMPLETIONS = Arrays.asList("entities", "blocks", "items", "particles", "cloud", "reload", "pause");
     private static final boolean HAS_ITEM_GETKEY = has(Item.class, "getKey");
     private static final boolean HAS_MATERIAL_ISAIR = has(Material.class, "isAir");
     private static final boolean HAS_ENTITY_SETGRAVITY = has(Entity.class, "setGravity", boolean.class);
     private static final boolean HAS_ENTITY_SETINVULNERABLE = has(Entity.class, "setInvulnerable", boolean.class);
     private static final Version VERSION;
-    private final Set<EntityType> ignoredEntityTypes = EnumSet.noneOf(EntityType.class);
-    private int itemsPerTick;
+    private final Settings settings = new Settings(this);
+    private boolean pause;
 
     static {
         if (has("net.minecraft.world.level.block.state.BlockState")) {
@@ -60,16 +56,7 @@ public final class TypeDebugPlugin extends JavaPlugin implements Listener {
         getCommand("start").setExecutor(this);
         saveDefaultConfig();
 
-        final YamlConfiguration config = YamlConfiguration.loadConfiguration(new File(getDataFolder(), "config.yml"));
-        for (final String entityName : config.getStringList("ignored-entities")) {
-            try {
-                ignoredEntityTypes.add(EntityType.valueOf(entityName.toUpperCase(Locale.ROOT)));
-            } catch (final IllegalArgumentException e) {
-                getLogger().warning("Invalid entity: " + entityName);
-            }
-        }
-
-        itemsPerTick = getConfig().getInt("items-per-tick", 1);
+        settings.load();
 
         getServer().getPluginManager().registerEvents(this, this);
         getLogger().info("Congratulations, you are running a " + VERSION.versionName + " server version.");
@@ -86,22 +73,29 @@ public final class TypeDebugPlugin extends JavaPlugin implements Listener {
         }
 
         final Player player = (Player) sender;
-        if (args[0].equalsIgnoreCase("blocks")) {
+        final String arg = args[0].toLowerCase(Locale.ROOT);
+        if (arg.equals("blocks")) {
             try {
                 setBlocks(player);
             } catch (final ReflectiveOperationException e) {
                 e.printStackTrace();
             }
-        } else if (args[0].equalsIgnoreCase("blocksbutinbad")) {
+        } else if (arg.equals("blocksbutinbad")) {
             setBlocksButInBad(player);
-        } else if (args[0].equalsIgnoreCase("entities")) {
+        } else if (arg.equals("entities")) {
             spawnEntities(player);
-        } else if (args[0].equalsIgnoreCase("items")) {
+        } else if (arg.equals("items")) {
             spawnItems(player);
-        } else if (args[0].equalsIgnoreCase("particles")) {
-            new ParticleHandler(player, false).runTaskTimer(this, 4, 4);
-        } else if (args[0].equalsIgnoreCase("cloud")) {
-            new ParticleHandler(player, true).runTaskTimer(this, 4, 4);
+        } else if (arg.equals("particles")) {
+            new ParticleHandler(player, false).runTaskTimer(this, settings.particleSpawnDelay(), settings.particleSpawnDelay());
+        } else if (arg.equals("cloud")) {
+            new ParticleHandler(player, true).runTaskTimer(this, settings.particleSpawnDelay(), settings.particleSpawnDelay());
+        } else if (arg.equals("pause")) {
+            pause = !pause;
+            sender.sendMessage("Pause: " + pause);
+        } else if (arg.equals("reload")) {
+            settings.load();
+            sender.sendMessage("Reloaded");
         } else {
             return false;
         }
@@ -174,7 +168,7 @@ public final class TypeDebugPlugin extends JavaPlugin implements Listener {
     private void spawnEntities(final Player player) {
         final World world = player.getWorld();
         final Location location = player.getLocation();
-        final List<EntityType> types = Arrays.stream(EntityType.values()).filter(EntityType::isSpawnable).filter(type -> !ignoredEntityTypes.contains(type)).collect(Collectors.toList());
+        final List<EntityType> types = Arrays.stream(EntityType.values()).filter(EntityType::isSpawnable).filter(type -> !settings.ignoredEntityTypes().contains(type)).collect(Collectors.toList());
         new BukkitRunnable() {
             private int i;
             private int counter;
@@ -182,6 +176,9 @@ public final class TypeDebugPlugin extends JavaPlugin implements Listener {
 
             @Override
             public void run() {
+                if (pause) {
+                    return;
+                }
                 if (i == types.size() || !player.isOnline()) {
                     cancel();
                     return;
@@ -207,7 +204,7 @@ public final class TypeDebugPlugin extends JavaPlugin implements Listener {
                 // Step sideways
                 location.add(forwards ? 4 : -4, 0, 0);
             }
-        }.runTaskTimer(this, 7, 7);
+        }.runTaskTimer(this, settings.entitySpawnDelay(), settings.entitySpawnDelay());
     }
 
     private void spawnItems(final Player player) {
@@ -215,11 +212,14 @@ public final class TypeDebugPlugin extends JavaPlugin implements Listener {
         final Location location = player.getLocation();
         final Material[] materials = Material.values();
         new BukkitRunnable() {
-            private final Item[] lastItems = new Item[itemsPerTick];
+            private final Item[] lastItems = new Item[settings.itemsPerTick()];
             private int i;
 
             @Override
             public void run() {
+                if (pause) {
+                    return;
+                }
                 if (i != 0) {
                     // Remove last items
                     for (final Item item : lastItems) {
@@ -229,7 +229,7 @@ public final class TypeDebugPlugin extends JavaPlugin implements Listener {
                 }
 
                 final Location clone = location.clone();
-                for (int j = 0; j < itemsPerTick; j++) {
+                for (int j = 0; j < settings.itemsPerTick(); j++) {
                     if (!next(j, clone)) {
                         return;
                     }
@@ -271,7 +271,7 @@ public final class TypeDebugPlugin extends JavaPlugin implements Listener {
             private boolean isAir(final Material material) {
                 return HAS_MATERIAL_ISAIR ? material.isAir() : material == Material.AIR || material.name().endsWith("_AIR");
             }
-        }.runTaskTimer(this, 0, 0);
+        }.runTaskTimer(this, settings.itemSpawnDelay(), settings.itemSpawnDelay());
     }
 
     @Override
@@ -311,5 +311,9 @@ public final class TypeDebugPlugin extends JavaPlugin implements Listener {
          * @return nms class
          */
         Class<?> clazz(String sanePackage, String stupidName, String saneName) throws ClassNotFoundException;
+    }
+
+    public boolean isPaused() {
+        return pause;
     }
 }

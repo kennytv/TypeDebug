@@ -46,6 +46,9 @@ public final class ParticleHandler extends BukkitRunnable {
 
     @Override
     public void run() {
+        if (plugin.isPaused()) {
+            return;
+        }
         if (i == PARTICLES.length || !player.isOnline()) {
             stop();
             return;

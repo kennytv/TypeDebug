@@ -11,3 +11,6 @@ ignored-entities:
   - GIANT
   - FIREBALL
 items-per-tick: 4
+item-spawn-delay: 0
+particle-spawn-delay: 4
+entity-spawn-delay: 7
