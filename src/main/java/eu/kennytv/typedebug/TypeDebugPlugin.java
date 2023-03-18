@@ -1,13 +1,28 @@
 package eu.kennytv.typedebug;
 
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
 import eu.kennytv.typedebug.handler.ParticleHandler;
 import eu.kennytv.typedebug.util.NMSUtil;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+import java.util.stream.Collectors;
+import net.kyori.adventure.text.Component;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Item;
@@ -19,20 +34,11 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.StringUtil;
 import org.jetbrains.annotations.NotNull;
 
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.stream.Collectors;
-
 import static eu.kennytv.typedebug.util.ReflectionUtil.has;
 
 public final class TypeDebugPlugin extends JavaPlugin implements Listener {
 
-    private static final List<String> COMPLETIONS = Arrays.asList("entities", "blocks", "items", "particles", "cloud", "reload", "pause");
+    private static final List<String> COMPLETIONS = Arrays.asList("entities", "blocks", "items", "particles", "cloud", "translations", "reload", "pause");
     private static final boolean HAS_ITEM_GETKEY = has(Item.class, "getKey");
     private static final boolean HAS_MATERIAL_ISAIR = has(Material.class, "isAir");
     private static final boolean HAS_ENTITY_SETGRAVITY = has(Entity.class, "setGravity", boolean.class);
@@ -74,32 +80,81 @@ public final class TypeDebugPlugin extends JavaPlugin implements Listener {
 
         final Player player = (Player) sender;
         final String arg = args[0].toLowerCase(Locale.ROOT);
-        if (arg.equals("blocks")) {
-            try {
-                setBlocks(player);
-            } catch (final ReflectiveOperationException e) {
-                e.printStackTrace();
-            }
-        } else if (arg.equals("blocksbutinbad")) {
-            setBlocksButInBad(player);
-        } else if (arg.equals("entities")) {
-            spawnEntities(player);
-        } else if (arg.equals("items")) {
-            spawnItems(player);
-        } else if (arg.equals("particles")) {
-            new ParticleHandler(player, false).runTaskTimer(this, settings.particleSpawnDelay(), settings.particleSpawnDelay());
-        } else if (arg.equals("cloud")) {
-            new ParticleHandler(player, true).runTaskTimer(this, settings.particleSpawnDelay(), settings.particleSpawnDelay());
-        } else if (arg.equals("pause")) {
-            pause = !pause;
-            sender.sendMessage("Pause: " + pause);
-        } else if (arg.equals("reload")) {
-            settings.load();
-            sender.sendMessage("Reloaded");
-        } else {
-            return false;
+        switch (arg) {
+            case "blocks":
+                try {
+                    setBlocks(player);
+                } catch (final ReflectiveOperationException e) {
+                    e.printStackTrace();
+                }
+                break;
+            case "blocksbutinbad":
+                setBlocksButInBad(player);
+                break;
+            case "entities":
+                spawnEntities(player);
+                break;
+            case "items":
+                spawnItems(player);
+                break;
+            case "particles":
+                new ParticleHandler(player, false).runTaskTimer(this, settings.particleSpawnDelay(), settings.particleSpawnDelay());
+                break;
+            case "cloud":
+                new ParticleHandler(player, true).runTaskTimer(this, settings.particleSpawnDelay(), settings.particleSpawnDelay());
+                break;
+            case "translations":
+                testTranslations(player);
+                break;
+            case "pause":
+                pause = !pause;
+                sender.sendMessage("Pause: " + pause);
+                break;
+            case "reload":
+                settings.load();
+                sender.sendMessage("Reloaded");
+                break;
+            default:
+                return false;
         }
         return true;
+    }
+
+    private void testTranslations(final Player player) {
+        final JsonObject object;
+        try (final InputStreamReader reader = new InputStreamReader(Bukkit.getServer().getClass().getResourceAsStream("/assets/minecraft/lang/en_us.json"))) {
+            object = new GsonBuilder().create().fromJson(reader, JsonObject.class);
+        } catch (final IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        final Location location = player.getLocation();
+        final World world = location.getWorld();
+        int i = 0;
+        boolean forwards = true;
+        for (final String translationKey : object.keySet()) {
+            if (i++ == 60) {
+                // Next row
+                i = 0;
+                forwards = !forwards;
+                location.add(0, 0, 2);
+            }
+
+            world.spawn(location, ArmorStand.class, e -> {
+                e.setAI(false);
+                e.setMarker(true);
+                e.setBasePlate(false);
+                e.setArms(false);
+                e.setCanTick(false);
+                e.setSmall(true);
+                e.setGravity(false);
+                e.customName(Component.translatable(translationKey));
+                e.setCustomNameVisible(true);
+            });
+
+            // Step sideways
+            location.add(forwards ? 1.5 : -1.5, 0, 0);
+        }
     }
 
     private void setBlocks(final Player player) throws ReflectiveOperationException {
