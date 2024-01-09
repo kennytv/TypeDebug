@@ -4,7 +4,7 @@ ignored-entities:
   - PAINTING
   - LEASH_HITCH
   - ITEM_FRAME
-  # No 👀
+  # No
   - WITHER
   - ENDER_DRAGON
   - GHAST
