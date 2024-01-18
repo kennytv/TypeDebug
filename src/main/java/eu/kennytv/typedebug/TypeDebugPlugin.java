@@ -2,7 +2,9 @@ package eu.kennytv.typedebug;
 
 import eu.kennytv.typedebug.handler.ParticleHandler;
 import eu.kennytv.typedebug.module.TranslationTester;
+import eu.kennytv.typedebug.util.BlockEntities;
 import eu.kennytv.typedebug.util.NMSUtil;
+import eu.kennytv.typedebug.util.Version;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,7 +34,7 @@ import static eu.kennytv.typedebug.util.ReflectionUtil.has;
 
 public final class TypeDebugPlugin extends JavaPlugin implements Listener {
 
-    private static final List<String> COMPLETIONS = Arrays.asList("entities", "blocks", "blocksbutinbad", "items", "particles", "cloud", "translations", "reload", "pause");
+    private static final List<String> COMPLETIONS = Arrays.asList("entities", "blocks", "blockentities", "blocksbutinbad", "items", "particles", "cloud", "translations", "reload", "pause");
     private static final boolean HAS_ITEM_GETKEY = has(Item.class, "getKey");
     private static final boolean HAS_MATERIAL_ISAIR = has(Material.class, "isAir");
     private static final boolean HAS_ENTITY_SETGRAVITY = has(Entity.class, "setGravity", boolean.class);
@@ -59,7 +61,7 @@ public final class TypeDebugPlugin extends JavaPlugin implements Listener {
         settings.load();
 
         getServer().getPluginManager().registerEvents(this, this);
-        getLogger().info("Congratulations, you are running a " + VERSION.versionName + " server version.");
+        getLogger().info("Congratulations, you are running a " + VERSION.versionName() + " server version.");
     }
 
     @Override
@@ -85,6 +87,9 @@ public final class TypeDebugPlugin extends JavaPlugin implements Listener {
                 break;
             case "blocksbutinbad":
                 setBlocksButInBad(player);
+                break;
+            case "blockentities":
+                setBlockEntities(player);
                 break;
             case "entities":
                 spawnEntities(player);
@@ -124,8 +129,8 @@ public final class TypeDebugPlugin extends JavaPlugin implements Listener {
         int x = location.getBlockX();
         int z = location.getBlockZ();
 
-        final Class<?> blockClass = VERSION.nmsSupplier.clazz("net.minecraft.world.level.block", "Block", "Block");
-        final Class<?> blockStateClass = VERSION.nmsSupplier.clazz("net.minecraft.world.level.block.state", "IBlockData", "BlockState");
+        final Class<?> blockClass = VERSION.nmsSupplier().clazz("net.minecraft.world.level.block", "Block", "Block");
+        final Class<?> blockStateClass = VERSION.nmsSupplier().clazz("net.minecraft.world.level.block.state", "IBlockData", "BlockState");
         final Class<?> craftBlockClass = NMSUtil.cbClass("block.CraftBlock");
         final Method setTypeAndData = craftBlockClass.getDeclaredMethod("setTypeAndData", blockStateClass, Boolean.TYPE);
         setTypeAndData.setAccessible(true);
@@ -178,34 +183,28 @@ public final class TypeDebugPlugin extends JavaPlugin implements Listener {
         }
     }
 
+    private void setBlockEntities(final Player player) {
+        new BufferedTask(player, 1) {
+            @Override
+            protected void set(final int i, final Location location) {
+                final Material type = BlockEntities.BLOCK_ENTITY_TYPES.get(i);
+                getLogger().info("Placing " + type.name());
+                location.getBlock().setType(type, false);
+            }
+        }.runTaskTimer(this, 3, 3);
+    }
+
     private void spawnEntities(final Player player) {
         final World world = player.getWorld();
         final Location location = player.getLocation();
         final List<EntityType> types = Arrays.stream(EntityType.values()).filter(EntityType::isSpawnable).filter(type -> !settings.ignoredEntityTypes().contains(type)).collect(Collectors.toList());
-        new BukkitRunnable() {
-            private int i;
-            private int counter;
-            private boolean forwards;
 
+        new BufferedTask(player, 3) {
             @Override
-            public void run() {
-                if (pause) {
-                    return;
-                }
-                if (i == types.size() || !player.isOnline()) {
-                    cancel();
-                    return;
-                }
-
-                final EntityType entityType = types.get(i++);
-                if (counter++ == 7) {
-                    // Next row
-                    counter = 0;
-                    forwards = !forwards;
-                    location.add(0, 0, 4);
-                }
-
+            protected void set(final int i, final Location location) {
+                final EntityType entityType = types.get(i);
                 getLogger().info("Spawning " + entityType.name());
+
                 final Entity entity = world.spawnEntity(location, entityType);
                 if (HAS_ENTITY_SETGRAVITY) {
                     entity.setGravity(false);
@@ -213,9 +212,6 @@ public final class TypeDebugPlugin extends JavaPlugin implements Listener {
                 if (HAS_ENTITY_SETINVULNERABLE) {
                     entity.setInvulnerable(true);
                 }
-
-                // Step sideways
-                location.add(forwards ? 4 : -4, 0, 0);
             }
         }.runTaskTimer(this, settings.entitySpawnDelay(), settings.entitySpawnDelay());
     }
@@ -295,35 +291,6 @@ public final class TypeDebugPlugin extends JavaPlugin implements Listener {
             return StringUtil.copyPartialMatches(args[0], COMPLETIONS, new ArrayList<>());
         }
         return Collections.emptyList();
-    }
-
-    private enum Version {
-
-        SANE((sanePackage, stupidName, saneName) -> Class.forName(sanePackage + "." + saneName)),
-        STUPID((sanePackage, stupidName, saneName) -> Class.forName(sanePackage + "." + stupidName)),
-        REALLY_STUPID((sanePackage, stupidName, saneName) -> NMSUtil.nmsClass(stupidName));
-
-        private final ClassNameSupplier nmsSupplier;
-        private final String versionName;
-
-        Version(final ClassNameSupplier nmsSupplier) {
-            this.nmsSupplier = nmsSupplier;
-            this.versionName = name().toLowerCase(Locale.ROOT).replace("_", " ");
-        }
-    }
-
-    @FunctionalInterface
-    private interface ClassNameSupplier {
-
-        /**
-         * Returns the nms class given by the stupid or sane name.
-         *
-         * @param sanePackage name of the sane package
-         * @param stupidName  {@link Version#STUPID} name of the class
-         * @param saneName    {@link Version#SANE} name of the class
-         * @return nms class
-         */
-        Class<?> clazz(String sanePackage, String stupidName, String saneName) throws ClassNotFoundException;
     }
 
     public boolean isPaused() {
