@@ -1,7 +1,8 @@
 package eu.kennytv.typedebug;
 
-import eu.kennytv.typedebug.handler.ParticleHandler;
-import eu.kennytv.typedebug.module.TranslationTester;
+import eu.kennytv.typedebug.module.ExtraTests;
+import eu.kennytv.typedebug.module.ParticleTest;
+import eu.kennytv.typedebug.module.TranslationTest;
 import eu.kennytv.typedebug.util.BlockEntities;
 import eu.kennytv.typedebug.util.NMSUtil;
 import eu.kennytv.typedebug.util.Version;
@@ -27,20 +28,22 @@ import org.bukkit.event.Listener;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.util.StringUtil;
 import org.jetbrains.annotations.NotNull;
 
 import static eu.kennytv.typedebug.util.ReflectionUtil.has;
+import static org.bukkit.util.StringUtil.copyPartialMatches;
 
 public final class TypeDebugPlugin extends JavaPlugin implements Listener {
 
-    private static final List<String> COMPLETIONS = Arrays.asList("entities", "blocks", "blockentities", "blocksbutinbad", "items", "particles", "cloud", "translations", "reload", "pause");
+    private static final List<String> TESTS = Arrays.asList("entities", "blocks", "blockentities", "blocksbutinbad", "items", "particles", "cloud", "translations", "extra");
+    private static final List<String> COMPLETIONS = Arrays.asList("reload", "run", "pause");
     private static final boolean HAS_ITEM_GETKEY = has(Item.class, "getKey");
     private static final boolean HAS_MATERIAL_ISAIR = has(Material.class, "isAir");
     private static final boolean HAS_ENTITY_SETGRAVITY = has(Entity.class, "setGravity", boolean.class);
     private static final boolean HAS_ENTITY_SETINVULNERABLE = has(Entity.class, "setInvulnerable", boolean.class);
     private static final Version VERSION;
     private final Settings settings = new Settings(this);
+    private final ExtraTests extraTests = new ExtraTests(this);
     private boolean pause;
 
     static {
@@ -67,16 +70,31 @@ public final class TypeDebugPlugin extends JavaPlugin implements Listener {
     @Override
     public boolean onCommand(final @NotNull CommandSender sender, final @NotNull Command cmd, final @NotNull String s, final String[] args) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage("no");
+            sender.sendMessage("Not a player");
             return true;
         }
-        if (args.length != 1) {
-            return false;
+
+        if (args.length == 1) {
+            if (args[0].equalsIgnoreCase("reload")) {
+                settings.load();
+                sender.sendMessage("Reloaded");
+            } else if (args[0].equalsIgnoreCase("pause")) {
+                pause = !pause;
+                sender.sendMessage("Pause: " + pause);
+            } else {
+                sender.sendMessage("Usage: /typedebug " + String.join("|", COMPLETIONS));
+            }
+            return true;
+        }
+
+        if (args.length != 2) {
+            sender.sendMessage("Usage: /typedebug run " + String.join("|", TESTS));
+            return true;
         }
 
         // Put things into different classes, so they don't get loaded on startup
         final Player player = (Player) sender;
-        final String arg = args[0].toLowerCase(Locale.ROOT);
+        final String arg = args[1].toLowerCase(Locale.ROOT);
         switch (arg) {
             case "blocks":
                 try {
@@ -98,26 +116,25 @@ public final class TypeDebugPlugin extends JavaPlugin implements Listener {
                 spawnItems(player);
                 break;
             case "particles":
-                new ParticleHandler(player, false).runTaskTimer(this, settings.particleSpawnDelay(), settings.particleSpawnDelay());
+                new ParticleTest(player, false).runTaskTimer(this, settings.particleSpawnDelay(), settings.particleSpawnDelay());
                 break;
             case "cloud":
-                new ParticleHandler(player, true).runTaskTimer(this, settings.particleSpawnDelay(), settings.particleSpawnDelay());
+                new ParticleTest(player, true).runTaskTimer(this, settings.particleSpawnDelay(), settings.particleSpawnDelay());
                 break;
             case "translations":
-                TranslationTester.test(player);
+                TranslationTest.run(player);
                 break;
-            case "pause":
-                pause = !pause;
-                sender.sendMessage("Pause: " + pause);
-                break;
-            case "reload":
-                settings.load();
-                sender.sendMessage("Reloaded");
+            case "extras":
+                extraTests.run(player);
                 break;
             default:
                 return false;
         }
         return true;
+    }
+
+    private void itemData(final Player player) {
+        // TODO One item for each item data component
     }
 
     private void setBlocks(final Player player) throws ReflectiveOperationException {
@@ -184,9 +201,9 @@ public final class TypeDebugPlugin extends JavaPlugin implements Listener {
     }
 
     private void setBlockEntities(final Player player) {
-        new BufferedTask(player, 1) {
+        new BufferedTask(player, BlockEntities.BLOCK_ENTITY_TYPES.size(), 1) {
             @Override
-            protected void set(final int i, final Location location) {
+            protected void test(final int i, final Location location) {
                 final Material type = BlockEntities.BLOCK_ENTITY_TYPES.get(i);
                 getLogger().info("Placing " + type.name());
                 location.getBlock().setType(type, false);
@@ -196,12 +213,10 @@ public final class TypeDebugPlugin extends JavaPlugin implements Listener {
 
     private void spawnEntities(final Player player) {
         final World world = player.getWorld();
-        final Location location = player.getLocation();
         final List<EntityType> types = Arrays.stream(EntityType.values()).filter(EntityType::isSpawnable).filter(type -> !settings.ignoredEntityTypes().contains(type)).collect(Collectors.toList());
-
-        new BufferedTask(player, 3) {
+        new BufferedTask(player, types.size(), 3) {
             @Override
-            protected void set(final int i, final Location location) {
+            protected void test(final int i, final Location location) {
                 final EntityType entityType = types.get(i);
                 getLogger().info("Spawning " + entityType.name());
 
@@ -288,7 +303,9 @@ public final class TypeDebugPlugin extends JavaPlugin implements Listener {
         if (args.length == 0) {
             return COMPLETIONS;
         } else if (args.length == 1) {
-            return StringUtil.copyPartialMatches(args[0], COMPLETIONS, new ArrayList<>());
+            return copyPartialMatches(args[0], COMPLETIONS, new ArrayList<>());
+        } else if (args.length == 2 && args[0].equalsIgnoreCase("run")) {
+            return copyPartialMatches(args[1], TESTS, new ArrayList<>());
         }
         return Collections.emptyList();
     }

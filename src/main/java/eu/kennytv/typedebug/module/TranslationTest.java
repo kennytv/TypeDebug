@@ -11,9 +11,9 @@ import org.bukkit.World;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
 
-public final class TranslationTester {
+public final class TranslationTest {
 
-    public static void test(final Player player) {
+    public static void run(final Player player) {
         final JsonObject object;
         try (final InputStreamReader reader = new InputStreamReader(Bukkit.getServer().getClass().getResourceAsStream("/assets/minecraft/lang/en_us.json"))) {
             object = new GsonBuilder().create().fromJson(reader, JsonObject.class);

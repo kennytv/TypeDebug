@@ -1,4 +1,5 @@
 ignored-entities:
+  # Needs data, see the run cloud command
   - AREA_EFFECT_CLOUD
   # Hanging entities (cannot be spawned without a block)
   - PAINTING
@@ -9,7 +10,6 @@ ignored-entities:
   - ENDER_DRAGON
   - GHAST
   - GIANT
-  - FIREBALL
 items-per-tick: 4
 item-spawn-delay: 0
 particle-spawn-delay: 4

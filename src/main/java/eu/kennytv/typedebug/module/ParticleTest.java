@@ -1,4 +1,4 @@
-package eu.kennytv.typedebug.handler;
+package eu.kennytv.typedebug.module;
 
 import eu.kennytv.typedebug.TypeDebugPlugin;
 import org.bukkit.Bukkit;
@@ -18,7 +18,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 import static eu.kennytv.typedebug.util.ReflectionUtil.has;
 
-public final class ParticleHandler extends BukkitRunnable {
+public final class ParticleTest extends BukkitRunnable {
 
     private static final boolean HAS_SETPARTICLE = has(AreaEffectCloud.class, "setParticle", Particle.class, Object.class);
     private static final Particle[] PARTICLES = Particle.values();
@@ -29,7 +29,7 @@ public final class ParticleHandler extends BukkitRunnable {
     private final Location location;
     private int i;
 
-    public ParticleHandler(final Player player, final boolean areaEffectCloud) {
+    public ParticleTest(final Player player, final boolean areaEffectCloud) {
         this.player = player;
         this.areaEffectCloud = areaEffectCloud;
         this.location = player.getLocation();
