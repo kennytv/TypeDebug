@@ -1,5 +1,6 @@
 name: TypeDebug
 version: ${project.version}
 main: eu.kennytv.typedebug.TypeDebugPlugin
+bootstrapper: eu.kennytv.typedebug.TypeDebugBootstrap
 author: kennytv
-api-version: 1.13
+api-version: '1.19'

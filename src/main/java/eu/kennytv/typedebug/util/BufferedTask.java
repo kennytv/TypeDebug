@@ -1,5 +1,6 @@
-package eu.kennytv.typedebug;
+package eu.kennytv.typedebug.util;
 
+import eu.kennytv.typedebug.TypeDebugPlugin;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;

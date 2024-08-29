@@ -1,6 +1,6 @@
 package eu.kennytv.typedebug.module;
 
-import eu.kennytv.typedebug.BufferedTask;
+import eu.kennytv.typedebug.util.BufferedTask;
 import eu.kennytv.typedebug.TypeDebugPlugin;
 import java.util.ArrayList;
 import java.util.List;
