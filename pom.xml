@@ -10,7 +10,7 @@
     <name>TypeDebug</name>
 
     <properties>
-        <plugin.java>1.8</plugin.java>
+        <plugin.java>17</plugin.java>
         <maven.compiler.target>${plugin.java}</maven.compiler.target>
         <maven.compiler.source>${plugin.java}</maven.compiler.source>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -50,7 +50,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>3.4.1</version>
+                <version>3.4.2</version>
                 <configuration>
                     <archive>
                         <manifest>

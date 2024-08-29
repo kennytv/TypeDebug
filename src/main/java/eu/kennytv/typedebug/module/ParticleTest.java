@@ -18,6 +18,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 import static eu.kennytv.typedebug.util.ReflectionUtil.has;
 
+@SuppressWarnings("removal")
 public final class ParticleTest extends BukkitRunnable {
 
     private static final boolean HAS_SETPARTICLE = has(AreaEffectCloud.class, "setParticle", Particle.class, Object.class);
@@ -60,7 +61,6 @@ public final class ParticleTest extends BukkitRunnable {
             stop();
             return;
         }
-
 
         plugin.getLogger().info("Spawning " + particle.name());
         final Object data;

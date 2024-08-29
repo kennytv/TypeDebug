@@ -11,6 +11,14 @@ public final class ReflectionUtil {
         }
     }
 
+    public static boolean has(final String clazz, final String method, final Class<?>... args) {
+        try {
+            return has(Class.forName(clazz), method, args);
+        } catch (final ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static boolean has(final String className) {
         try {
             Class.forName(className);

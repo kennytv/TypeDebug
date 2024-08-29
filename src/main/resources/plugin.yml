@@ -1,4 +1,4 @@
-name: ${project.name}
+name: TypeDebug
 version: ${project.version}
 main: eu.kennytv.typedebug.TypeDebugPlugin
 author: kennytv

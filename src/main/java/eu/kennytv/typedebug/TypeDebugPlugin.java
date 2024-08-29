@@ -13,7 +13,6 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
-import java.util.stream.Collectors;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -69,7 +68,7 @@ public final class TypeDebugPlugin extends JavaPlugin implements Listener {
 
     @Override
     public boolean onCommand(final @NotNull CommandSender sender, final @NotNull Command cmd, final @NotNull String s, final String[] args) {
-        if (!(sender instanceof Player)) {
+        if (!(sender instanceof final Player player)) {
             sender.sendMessage("Not a player");
             return true;
         }
@@ -93,7 +92,6 @@ public final class TypeDebugPlugin extends JavaPlugin implements Listener {
         }
 
         // Put things into different classes, so they don't get loaded on startup
-        final Player player = (Player) sender;
         final String arg = args[1].toLowerCase(Locale.ROOT);
         switch (arg) {
             case "blocks":
@@ -213,7 +211,7 @@ public final class TypeDebugPlugin extends JavaPlugin implements Listener {
 
     private void spawnEntities(final Player player) {
         final World world = player.getWorld();
-        final List<EntityType> types = Arrays.stream(EntityType.values()).filter(EntityType::isSpawnable).filter(type -> !settings.ignoredEntityTypes().contains(type)).collect(Collectors.toList());
+        final List<EntityType> types = Arrays.stream(EntityType.values()).filter(EntityType::isSpawnable).filter(type -> !settings.ignoredEntityTypes().contains(type)).toList();
         new BufferedTask(player, types.size(), 3) {
             @Override
             protected void test(final int i, final Location location) {

@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import java.util.logging.Level;
 import org.bukkit.Bukkit;
 import org.bukkit.Effect;
 import org.bukkit.EntityEffect;
@@ -31,6 +32,7 @@ import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
+@SuppressWarnings("deprecation")
 public final class ExtraTests {
     private final List<PacketTest> tests = new ArrayList<>();
     private final TypeDebugPlugin plugin;
@@ -171,8 +173,7 @@ public final class ExtraTests {
                 try {
                     test.runnable().accept(player);
                 } catch (final Exception e) {
-                    plugin.getLogger().severe("Failed to run test: " + test.name());
-                    e.printStackTrace();
+                    plugin.getLogger().log(Level.SEVERE, "Failed to run test: " + test.name(), e);
                 }
             }
         }.runTaskTimer(plugin, 0, 2);
