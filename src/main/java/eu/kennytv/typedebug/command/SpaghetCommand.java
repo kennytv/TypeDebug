@@ -40,24 +40,25 @@ public final class SpaghetCommand extends Command {
             } else if (args[0].equalsIgnoreCase("pause")) {
                 plugin.togglePause(sender);
             } else {
-                sender.sendMessage("Usage: /start " + String.join("|", COMPLETIONS));
+                sender.sendMessage("Usage: /start run " + String.join("|", COMPLETIONS));
             }
             return true;
-        }
-
-        if (args.length != 2) {
+        } else if (args.length == 0) {
             sender.sendMessage("Usage: /start run " + String.join("|", TypeDebugPlugin.TESTS));
             return true;
         }
 
-        if (!startTask(args[1].toLowerCase(Locale.ROOT), player)) {
+        // Copy args array starting with index 2
+        final String[] extra = new String[args.length - 2];
+        System.arraycopy(args, 2, extra, 0, extra.length);
+        if (!startTask(args[1].toLowerCase(Locale.ROOT), extra, player)) {
             sender.sendMessage("Usage: /start run " + String.join("|", TypeDebugPlugin.TESTS));
             return false;
         }
         return true;
     }
 
-    static boolean startTask(final String name, final Player player) {
+    static boolean startTask(final String name, final String[] extra, final Player player) {
         // Put things into different classes, so they don't get loaded on startup
         switch (name) {
             case "blocks":
