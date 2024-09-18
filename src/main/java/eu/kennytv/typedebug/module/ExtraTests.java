@@ -179,21 +179,6 @@ public final class ExtraTests {
         }.runTaskTimer(plugin, 0, 2);
     }
 
-    private static final class PacketTest {
-        private final String name;
-        private final Consumer<Player> runnable;
-
-        public PacketTest(final String name, final Consumer<Player> runnable) {
-            this.name = name;
-            this.runnable = runnable;
-        }
-
-        public String name() {
-            return name;
-        }
-
-        public Consumer<Player> runnable() {
-            return runnable;
-        }
+    private record PacketTest(String name, Consumer<Player> runnable) {
     }
 }

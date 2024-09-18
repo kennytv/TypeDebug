@@ -19,21 +19,24 @@ public class TypeDebugBootstrap implements PluginBootstrap {
     public void bootstrap(final @NotNull BootstrapContext context) {
         if (ReflectionUtil.has("io.papermc.paper.registry.data.EnchantmentRegistryEntry")) {
             context.getLogger().info("Registering custom enchantments");
-            registerCustomRegistryEntries(context);
+            ClassLoadingFun.registerCustomRegistryEntries(context);
         }
     }
 
-    private static void registerCustomRegistryEntries(final BootstrapContext context) {
-        context.getLifecycleManager().registerEventHandler(RegistryEvents.ENCHANTMENT.freeze().newHandler(event -> event.registry().register(
-            TypedKey.create(RegistryKey.ENCHANTMENT, Key.key("typedebug:test")),
-            builder -> builder.description(Component.text("Pointy"))
-                .supportedItems(event.getOrCreateTag(ItemTypeTagKeys.SWORDS))
-                .anvilCost(1)
-                .maxLevel(25)
-                .weight(10)
-                .minimumCost(EnchantmentRegistryEntry.EnchantmentCost.of(1, 1))
-                .maximumCost(EnchantmentRegistryEntry.EnchantmentCost.of(3, 1))
-                .activeSlots(EquipmentSlotGroup.ANY)
-        )));
+    private static final class ClassLoadingFun {
+
+        private static void registerCustomRegistryEntries(final BootstrapContext context) {
+            context.getLifecycleManager().registerEventHandler(RegistryEvents.ENCHANTMENT.freeze().newHandler(event -> event.registry().register(
+                TypedKey.create(RegistryKey.ENCHANTMENT, Key.key("typedebug:test")),
+                builder -> builder.description(Component.text("Pointy"))
+                    .supportedItems(event.getOrCreateTag(ItemTypeTagKeys.SWORDS))
+                    .anvilCost(1)
+                    .maxLevel(25)
+                    .weight(10)
+                    .minimumCost(EnchantmentRegistryEntry.EnchantmentCost.of(1, 1))
+                    .maximumCost(EnchantmentRegistryEntry.EnchantmentCost.of(3, 1))
+                    .activeSlots(EquipmentSlotGroup.ANY)
+            )));
+        }
     }
 }

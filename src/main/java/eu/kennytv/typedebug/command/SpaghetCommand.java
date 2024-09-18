@@ -1,6 +1,7 @@
 package eu.kennytv.typedebug.command;
 
 import eu.kennytv.typedebug.TypeDebugPlugin;
+import eu.kennytv.typedebug.module.ItemTests;
 import eu.kennytv.typedebug.module.ParticleTest;
 import eu.kennytv.typedebug.module.TranslationTest;
 import java.util.ArrayList;
@@ -77,6 +78,9 @@ public final class SpaghetCommand extends Command {
                 break;
             case "items":
                 PLUGIN.spawnItems(player);
+                break;
+            case "itemswithdata":
+                PLUGIN.spawnItems(player, ItemTests.ITEMS);
                 break;
             case "particles":
                 new ParticleTest(player, false).runTaskTimer(PLUGIN, PLUGIN.settings().particleSpawnDelay(), PLUGIN.settings().particleSpawnDelay());

@@ -3,11 +3,13 @@ package eu.kennytv.typedebug;
 import eu.kennytv.typedebug.command.BrigadierCommand;
 import eu.kennytv.typedebug.command.SpaghetCommand;
 import eu.kennytv.typedebug.module.ExtraTests;
+import eu.kennytv.typedebug.module.ItemTests;
 import eu.kennytv.typedebug.util.BlockEntities;
 import eu.kennytv.typedebug.util.BufferedTask;
 import eu.kennytv.typedebug.util.NMSUtil;
 import eu.kennytv.typedebug.util.Version;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -29,7 +31,7 @@ import static eu.kennytv.typedebug.util.ReflectionUtil.has;
 
 public final class TypeDebugPlugin extends JavaPlugin implements Listener {
 
-    public static final List<String> TESTS = Arrays.asList("entities", "blocks", "blockentities", "blocksbutinbad", "items", "particles", "cloud", "translations", "extra");
+    public static final List<String> TESTS = Arrays.asList("entities", "blocks", "blockentities", "blocksbutinbad", "items", "itemswithdata", "particles", "cloud", "translations", "extra");
     private static final boolean HAS_ITEM_GETKEY = has(Item.class, "getKey");
     private static final boolean HAS_MATERIAL_ISAIR = has(Material.class, "isAir");
     private static final boolean HAS_ENTITY_SETGRAVITY = has(Entity.class, "setGravity", boolean.class);
@@ -51,8 +53,9 @@ public final class TypeDebugPlugin extends JavaPlugin implements Listener {
 
     @Override
     public void onEnable() {
-        saveDefaultConfig();
+        ItemTests.init();
 
+        saveDefaultConfig();
         settings.load();
 
         getServer().getPluginManager().registerEvents(this, this);
@@ -64,10 +67,6 @@ public final class TypeDebugPlugin extends JavaPlugin implements Listener {
         } else {
             getServer().getCommandMap().register("typedebug", new SpaghetCommand(this));
         }
-    }
-
-    private void itemData(final Player player) {
-        // TODO One item for each item data component
     }
 
     public void setBlocks(final Player player) throws ReflectiveOperationException {
@@ -165,9 +164,26 @@ public final class TypeDebugPlugin extends JavaPlugin implements Listener {
     }
 
     public void spawnItems(final Player player) {
+        // All items on their own
+        final Material[] materials = Material.values();
+        final List<ItemTests.ItemAndKey> items = new ArrayList<>();
+        for (final Material material : materials) {
+            if (material.isItem() && !isAir(material)) {
+                final String key = HAS_ITEM_GETKEY ? material.getKey().toString() : material.name();
+                items.add(new ItemTests.ItemAndKey(key, new ItemStack(material)));
+            }
+        }
+        spawnItems(player, items);
+    }
+
+    private boolean isAir(final Material material) {
+        return HAS_MATERIAL_ISAIR ? material.isAir() : material == Material.AIR || material.name().endsWith("_AIR");
+    }
+
+    public void spawnItems(final Player player, final List<ItemTests.ItemAndKey> items) {
         final World world = player.getWorld();
         final Location location = player.getLocation();
-        final Material[] materials = Material.values();
+
         new BukkitRunnable() {
             private final Item[] lastItems = new Item[settings.itemsPerTick()];
             private int i;
@@ -195,28 +211,21 @@ public final class TypeDebugPlugin extends JavaPlugin implements Listener {
             }
 
             private boolean next(final int j, final Location location) {
-                if (i == materials.length || !player.isOnline()) {
+                if (i == items.size() || !player.isOnline()) {
                     stop();
                     return false;
                 }
 
-                // Try until we find a spawnable item
-                Material material;
-                do {
-                    if (i >= materials.length) {
-                        stop();
-                        return false;
-                    }
-                } while (!(material = materials[i++]).isItem() || isAir(material));
-
-                getLogger().info("Spawning " + (HAS_ITEM_GETKEY ? material.getKey() : material.name()));
-                final ItemStack itemStack = new ItemStack(material);
+                final ItemStack itemStack = items.get(i).item();
+                getLogger().info("Spawning " + items.get(i).key());
                 final Item item = world.dropItem(location, itemStack);
                 item.setGravity(false);
                 item.setInvulnerable(true);
 
                 lastItems[j] = item;
                 player.getInventory().addItem(itemStack);
+
+                i++;
                 return true;
             }
 
@@ -225,9 +234,7 @@ public final class TypeDebugPlugin extends JavaPlugin implements Listener {
                 getLogger().info("Done!");
             }
 
-            private boolean isAir(final Material material) {
-                return HAS_MATERIAL_ISAIR ? material.isAir() : material == Material.AIR || material.name().endsWith("_AIR");
-            }
+
         }.runTaskTimer(this, settings.itemSpawnDelay(), settings.itemSpawnDelay());
     }
 
