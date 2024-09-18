@@ -135,7 +135,7 @@ public final class ItemTests {
         });
         meta("charged_projectiles", Material.CROSSBOW, CrossbowMeta.class, meta -> meta.addChargedProjectile(new ItemStack(Material.ARROW)));
         meta("bundle_contents", Material.BUNDLE, BundleMeta.class, meta -> meta.addItem(new ItemStack(Material.ARROW)));
-        meta("potion_contents", Material.BUNDLE, PotionMeta.class, meta -> {
+        meta("potion_contents", Material.POTION, PotionMeta.class, meta -> {
             meta.setColor(Color.AQUA);
             meta.setBasePotionType(PotionType.HARMING);
             meta.addCustomEffect(new PotionEffect(PotionEffectType.ABSORPTION, 20, 1, false, false, true), true);
@@ -171,7 +171,7 @@ public final class ItemTests {
             meta.addEffect(FireworkEffect.builder().flicker(true).withColor(Color.AQUA).trail(true).withFade(Color.AQUA).build());
             meta.setPower(2);
         });
-        meta("profile", Material.PLAYER_HEAD, SkullMeta.class, meta -> meta.setPlayerProfile(Bukkit.getOnlinePlayers().iterator().next().getPlayerProfile()));
+        meta("profile", Material.PLAYER_HEAD, SkullMeta.class, meta -> meta.setPlayerProfile(Bukkit.getOfflinePlayer("kennytv").getPlayerProfile()));
         meta("note_block_sound", Material.PLAYER_HEAD, SkullMeta.class, meta -> meta.setNoteBlockSound(NamespacedKey.fromString("test:note_block_sound")));
         meta("banner_patterns", Material.BLACK_BANNER, BannerMeta.class, meta -> {
             meta.addPattern(new Pattern(DyeColor.RED, PatternType.BORDER));
@@ -185,28 +185,26 @@ public final class ItemTests {
         // TODO block_state
         // TODO bees
         // TODO container_loot
-
-        // TODO Send items as chat message
     }
 
     private static void meta(final String key, final Material type, final Consumer<ItemMeta> metaConsumer) {
         final ItemStack item = new ItemStack(type);
         try {
             item.editMeta(metaConsumer);
+            ITEMS.add(new ItemAndKey(key, item));
         } catch (final Throwable t) {
             t.printStackTrace();
         }
-        ITEMS.add(new ItemAndKey(key, item));
     }
 
     private static <T extends ItemMeta> void meta(final String key, final Material type, final Class<T> metaClass, final Consumer<T> metaConsumer) {
         final ItemStack item = new ItemStack(type);
         try {
             item.editMeta(metaClass, metaConsumer);
+            ITEMS.add(new ItemAndKey(key, item));
         } catch (final Throwable t) {
             t.printStackTrace();
         }
-        ITEMS.add(new ItemAndKey(key, item));
     }
 
     public record ItemAndKey(String key, ItemStack item) {

@@ -5,20 +5,24 @@ import eu.kennytv.typedebug.module.ItemTests;
 import eu.kennytv.typedebug.module.ParticleTest;
 import eu.kennytv.typedebug.module.TranslationTest;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import net.kyori.adventure.text.Component;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 import static org.bukkit.util.StringUtil.copyPartialMatches;
 
 public final class SpaghetCommand extends Command {
 
+    static final List<String> TESTS = Arrays.asList("entities", "blocks", "blockentities", "items", "itemswithdata", "particles", "cloud", "translations", "extra");
     private static final TypeDebugPlugin PLUGIN = TypeDebugPlugin.getPlugin(TypeDebugPlugin.class);
-    private static final List<String> COMPLETIONS = List.of("reload", "run", "pause");
+    private static final List<String> COMPLETIONS = List.of("reload", "run", "pause", "printitem");
     private final TypeDebugPlugin plugin;
 
     public SpaghetCommand(final TypeDebugPlugin plugin) {
@@ -39,12 +43,14 @@ public final class SpaghetCommand extends Command {
                 sender.sendMessage("Reloaded");
             } else if (args[0].equalsIgnoreCase("pause")) {
                 plugin.togglePause(sender);
+            } else if (args[0].equalsIgnoreCase("printitem")) {
+                PrintItem.printItem(player);
             } else {
                 sender.sendMessage("Usage: /start run " + String.join("|", COMPLETIONS));
             }
             return true;
         } else if (args.length == 0) {
-            sender.sendMessage("Usage: /start run " + String.join("|", TypeDebugPlugin.TESTS));
+            sender.sendMessage("Usage: /start run " + String.join("|", TESTS));
             return true;
         }
 
@@ -52,7 +58,7 @@ public final class SpaghetCommand extends Command {
         final String[] extra = new String[args.length - 2];
         System.arraycopy(args, 2, extra, 0, extra.length);
         if (!startTask(args[1].toLowerCase(Locale.ROOT), extra, player)) {
-            sender.sendMessage("Usage: /start run " + String.join("|", TypeDebugPlugin.TESTS));
+            sender.sendMessage("Usage: /start run " + String.join("|", TESTS));
             return false;
         }
         return true;
@@ -65,11 +71,9 @@ public final class SpaghetCommand extends Command {
                 try {
                     PLUGIN.setBlocks(player);
                 } catch (final ReflectiveOperationException e) {
-                    e.printStackTrace();
+                    player.sendMessage("Falling back to bad/old method");
+                    PLUGIN.setBlocksButInBad(player);
                 }
-                break;
-            case "blocksbutinbad":
-                PLUGIN.setBlocksButInBad(player);
                 break;
             case "blockentities":
                 PLUGIN.setBlockEntities(player);
@@ -81,7 +85,7 @@ public final class SpaghetCommand extends Command {
                 PLUGIN.spawnItems(player);
                 break;
             case "itemswithdata":
-                PLUGIN.spawnItems(player, ItemTests.ITEMS, 1);
+                PLUGIN.spawnItems(player, ItemTests.ITEMS, 1, true);
                 break;
             case "particles":
                 new ParticleTest(player, false).runTaskTimer(PLUGIN, PLUGIN.settings().particleSpawnDelay(), PLUGIN.settings().particleSpawnDelay());
@@ -108,7 +112,7 @@ public final class SpaghetCommand extends Command {
         } else if (args.length == 1) {
             return copyPartialMatches(args[0], COMPLETIONS, new ArrayList<>());
         } else if (args.length == 2 && args[0].equalsIgnoreCase("run")) {
-            return copyPartialMatches(args[1], TypeDebugPlugin.TESTS, new ArrayList<>());
+            return copyPartialMatches(args[1], TESTS, new ArrayList<>());
         }
         return Collections.emptyList();
     }
@@ -116,5 +120,14 @@ public final class SpaghetCommand extends Command {
     @Override
     public String getPermission() {
         return "typedebug.command";
+    }
+
+    // Class loading!
+    private static final class PrintItem {
+
+        private static void printItem(final Player player) {
+            final ItemStack item = player.getInventory().getItemInMainHand();
+            player.sendMessage(Component.text().content("Hover here").hoverEvent(item.asHoverEvent()));
+        }
     }
 }

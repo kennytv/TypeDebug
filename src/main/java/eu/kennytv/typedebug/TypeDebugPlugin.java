@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -31,14 +32,13 @@ import static eu.kennytv.typedebug.util.ReflectionUtil.has;
 
 public final class TypeDebugPlugin extends JavaPlugin implements Listener {
 
-    public static final List<String> TESTS = Arrays.asList("entities", "blocks", "blockentities", "blocksbutinbad", "items", "itemswithdata", "particles", "cloud", "translations", "extra");
     private static final boolean HAS_ITEM_GETKEY = has(Item.class, "getKey");
     private static final boolean HAS_MATERIAL_ISAIR = has(Material.class, "isAir");
     private static final boolean HAS_ENTITY_SETGRAVITY = has(Entity.class, "setGravity", boolean.class);
     private static final boolean HAS_ENTITY_SETINVULNERABLE = has(Entity.class, "setInvulnerable", boolean.class);
     private static final Version VERSION;
     private final Settings settings = new Settings(this);
-    private final ExtraTests extraTests = new ExtraTests(this);
+    private final ExtraTests extraTests;
     private boolean pause;
 
     static {
@@ -51,9 +51,15 @@ public final class TypeDebugPlugin extends JavaPlugin implements Listener {
         }
     }
 
+    public TypeDebugPlugin() {
+        extraTests = VERSION == Version.REALLY_STUPID ? null : new ExtraTests(this);
+    }
+
     @Override
     public void onEnable() {
-        ItemTests.init();
+        if (VERSION == Version.SANE) {
+            ItemTests.init();
+        }
 
         saveDefaultConfig();
         settings.load();
@@ -164,23 +170,21 @@ public final class TypeDebugPlugin extends JavaPlugin implements Listener {
     }
 
     public void spawnItems(final Player player) {
-        // All items on their own
-        final Material[] materials = Material.values();
         final List<ItemTests.ItemAndKey> items = new ArrayList<>();
-        for (final Material material : materials) {
+        for (final Material material : Material.values()) {
             if (material.isItem() && !isAir(material)) {
                 final String key = HAS_ITEM_GETKEY ? material.getKey().toString() : material.name();
                 items.add(new ItemTests.ItemAndKey(key, new ItemStack(material)));
             }
         }
-        spawnItems(player, items, settings.itemsPerTick());
+        spawnItems(player, items, settings.itemsPerTick(), false);
     }
 
     private boolean isAir(final Material material) {
         return HAS_MATERIAL_ISAIR ? material.isAir() : material == Material.AIR || material.name().endsWith("_AIR");
     }
 
-    public void spawnItems(final Player player, final List<ItemTests.ItemAndKey> items, final int itemsPerTick) {
+    public void spawnItems(final Player player, final List<ItemTests.ItemAndKey> items, final int itemsPerTick, final boolean sendAsComponent) {
         final World world = player.getWorld();
         final Location location = player.getLocation();
 
@@ -217,13 +221,18 @@ public final class TypeDebugPlugin extends JavaPlugin implements Listener {
                 }
 
                 final ItemStack itemStack = items.get(i).item();
-                getLogger().info("Spawning " + items.get(i).key());
+                final String key = items.get(i).key();
+                getLogger().info("Spawning " + key);
                 final Item item = world.dropItem(location, itemStack);
                 item.setGravity(false);
                 item.setInvulnerable(true);
 
                 lastItems[j] = item;
                 player.getInventory().addItem(itemStack);
+
+                if (sendAsComponent) {
+                    player.sendMessage(Component.text().content(key).hoverEvent(itemStack.asHoverEvent()));
+                }
 
                 i++;
                 return true;
