@@ -8,6 +8,7 @@ import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import eu.kennytv.typedebug.TypeDebugPlugin;
 import eu.kennytv.typedebug.module.ItemTests;
+import eu.kennytv.typedebug.util.ComponentUtil;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
@@ -85,7 +86,12 @@ public final class BrigadierCommand {
     private static int printHandItem(final CommandContext<CommandSourceStack> ctx) {
         final Player player = (Player) ctx.getSource().getSender();
         final ItemStack item = player.getInventory().getItemInMainHand();
-        player.sendMessage(Component.text().content("Hover here").hoverEvent(item.asHoverEvent()));
+        if (item.isEmpty()) {
+            ctx.getSource().getSender().sendMessage("No item in hand");
+            return -1;
+        }
+
+        ComponentUtil.sendItemHover(player, item, "Hover here");
         return Command.SINGLE_SUCCESS;
     }
 

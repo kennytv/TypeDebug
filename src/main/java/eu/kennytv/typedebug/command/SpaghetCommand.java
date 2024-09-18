@@ -4,23 +4,22 @@ import eu.kennytv.typedebug.TypeDebugPlugin;
 import eu.kennytv.typedebug.module.ItemTests;
 import eu.kennytv.typedebug.module.ParticleTest;
 import eu.kennytv.typedebug.module.TranslationTest;
+import eu.kennytv.typedebug.util.ComponentUtil;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
-import net.kyori.adventure.text.Component;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 import static org.bukkit.util.StringUtil.copyPartialMatches;
 
 public final class SpaghetCommand extends Command {
 
-    static final List<String> TESTS = Arrays.asList("entities", "blocks", "blockentities", "items", "itemswithdata", "particles", "cloud", "translations", "extra");
+    static final List<String> TESTS = Arrays.asList("entities", "blocks", "blockentities", "items", "itemswithdata", "particles", "cloud", "translations", "extras");
     private static final TypeDebugPlugin PLUGIN = TypeDebugPlugin.getPlugin(TypeDebugPlugin.class);
     private static final List<String> COMPLETIONS = List.of("reload", "run", "pause", "printitem");
     private final TypeDebugPlugin plugin;
@@ -44,7 +43,7 @@ public final class SpaghetCommand extends Command {
             } else if (args[0].equalsIgnoreCase("pause")) {
                 plugin.togglePause(sender);
             } else if (args[0].equalsIgnoreCase("printitem")) {
-                PrintItem.printItem(player);
+                ComponentUtil.sendItemHover(sender, player.getInventory().getItemInMainHand(), "Hover here");
             } else {
                 sender.sendMessage("Usage: /start run " + String.join("|", COMPLETIONS));
             }
@@ -120,14 +119,5 @@ public final class SpaghetCommand extends Command {
     @Override
     public String getPermission() {
         return "typedebug.command";
-    }
-
-    // Class loading!
-    private static final class PrintItem {
-
-        private static void printItem(final Player player) {
-            final ItemStack item = player.getInventory().getItemInMainHand();
-            player.sendMessage(Component.text().content("Hover here").hoverEvent(item.asHoverEvent()));
-        }
     }
 }

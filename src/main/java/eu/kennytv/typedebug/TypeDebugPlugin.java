@@ -6,6 +6,7 @@ import eu.kennytv.typedebug.module.ExtraTests;
 import eu.kennytv.typedebug.module.ItemTests;
 import eu.kennytv.typedebug.util.BlockEntities;
 import eu.kennytv.typedebug.util.BufferedTask;
+import eu.kennytv.typedebug.util.ComponentUtil;
 import eu.kennytv.typedebug.util.NMSUtil;
 import eu.kennytv.typedebug.util.Version;
 import java.lang.reflect.Method;
@@ -16,6 +17,7 @@ import java.util.List;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Registry;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.command.CommandSender;
@@ -25,6 +27,7 @@ import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.ItemType;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -170,11 +173,19 @@ public final class TypeDebugPlugin extends JavaPlugin implements Listener {
     }
 
     public void spawnItems(final Player player) {
+
         final List<ItemTests.ItemAndKey> items = new ArrayList<>();
-        for (final Material material : Material.values()) {
-            if (material.isItem() && !isAir(material)) {
-                final String key = HAS_ITEM_GETKEY ? material.getKey().toString() : material.name();
-                items.add(new ItemTests.ItemAndKey(key, new ItemStack(material)));
+        if (has("io.papermc.paper.registry.RegistryKey")) {
+            for (final ItemType itemType : Registry.ITEM) {
+                final String key = itemType.getKey().toString();
+                items.add(new ItemTests.ItemAndKey(key, itemType.createItemStack()));
+            }
+        } else {
+            for (final Material material : Material.values()) {
+                if (material.isItem() && !isAir(material)) {
+                    final String key = HAS_ITEM_GETKEY ? material.getKey().toString() : material.name();
+                    items.add(new ItemTests.ItemAndKey(key, new ItemStack(material)));
+                }
             }
         }
         spawnItems(player, items, settings.itemsPerTick(), false);
@@ -231,7 +242,7 @@ public final class TypeDebugPlugin extends JavaPlugin implements Listener {
                 player.getInventory().addItem(itemStack);
 
                 if (sendAsComponent) {
-                    player.sendMessage(Component.text().content(key).hoverEvent(itemStack.asHoverEvent()));
+                    ComponentUtil.sendItemHover(player, itemStack, key);
                 }
 
                 i++;
