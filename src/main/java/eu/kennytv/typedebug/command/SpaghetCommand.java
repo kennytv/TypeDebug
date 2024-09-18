@@ -80,7 +80,7 @@ public final class SpaghetCommand extends Command {
                 PLUGIN.spawnItems(player);
                 break;
             case "itemswithdata":
-                PLUGIN.spawnItems(player, ItemTests.ITEMS);
+                PLUGIN.spawnItems(player, ItemTests.ITEMS, 1);
                 break;
             case "particles":
                 new ParticleTest(player, false).runTaskTimer(PLUGIN, PLUGIN.settings().particleSpawnDelay(), PLUGIN.settings().particleSpawnDelay());

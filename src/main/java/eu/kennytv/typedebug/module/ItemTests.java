@@ -185,6 +185,8 @@ public final class ItemTests {
         // TODO block_state
         // TODO bees
         // TODO container_loot
+
+        // TODO Send items as chat message
     }
 
     private static void meta(final String key, final Material type, final Consumer<ItemMeta> metaConsumer) {
