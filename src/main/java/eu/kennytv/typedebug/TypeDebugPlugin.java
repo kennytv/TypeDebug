@@ -14,7 +14,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Registry;
@@ -173,7 +172,6 @@ public final class TypeDebugPlugin extends JavaPlugin implements Listener {
     }
 
     public void spawnItems(final Player player) {
-
         final List<ItemTests.ItemAndKey> items = new ArrayList<>();
         if (has("io.papermc.paper.registry.RegistryKey")) {
             for (final ItemType itemType : Registry.ITEM) {

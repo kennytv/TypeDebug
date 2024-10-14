@@ -1,7 +1,7 @@
 package eu.kennytv.typedebug.module;
 
-import eu.kennytv.typedebug.util.BufferedTask;
 import eu.kennytv.typedebug.TypeDebugPlugin;
+import eu.kennytv.typedebug.util.BufferedTask;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -13,6 +13,7 @@ import org.bukkit.EntityEffect;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Server;
 import org.bukkit.Sound;
 import org.bukkit.Statistic;
 import org.bukkit.WorldBorder;
@@ -28,6 +29,10 @@ import org.bukkit.entity.WanderingTrader;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.RecipeChoice;
+import org.bukkit.inventory.ShapedRecipe;
+import org.bukkit.inventory.SmithingTransformRecipe;
+import org.bukkit.inventory.SmithingTrimRecipe;
 import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -157,10 +162,58 @@ public final class ExtraTests {
             progress.awardCriteria("stone");
             progress.revokeCriteria("stone");
         });
+        addTest("update_recipes", player -> {
+            final Server server = plugin.getServer();
+            server.resetRecipes();
+
+            server.removeRecipe(NamespacedKey.minecraft("charcoal"));
+
+            final NamespacedKey discKey = NamespacedKey.fromString("typedebug:disc");
+            final ShapedRecipe discRecipe = new ShapedRecipe(discKey, new ItemStack(Material.MUSIC_DISC_11));
+            discRecipe.shape("#A#", "#A#", "#A#");
+            discRecipe.setIngredient('A', Material.DIAMOND);
+            server.addRecipe(discRecipe);
+
+            final NamespacedKey trimKey = NamespacedKey.fromString("typedebug:trim");
+            final SmithingTrimRecipe trimRecipe = new SmithingTrimRecipe(
+                trimKey,
+                new RecipeChoice.MaterialChoice(Material.PAPER),
+                new RecipeChoice.MaterialChoice(Material.LEATHER_CHESTPLATE),
+                new RecipeChoice.MaterialChoice(Material.ICE)
+            );
+            server.addRecipe(trimRecipe);
+
+            final NamespacedKey transformKey = NamespacedKey.fromString("typedebug:transform");
+            final SmithingTransformRecipe transformRecipe = new SmithingTransformRecipe(
+                transformKey,
+                new ItemStack(Material.DIAMOND_CHESTPLATE),
+                new RecipeChoice.MaterialChoice(Material.PAPER),
+                new RecipeChoice.MaterialChoice(Material.CHAINMAIL_CHESTPLATE),
+                new RecipeChoice.MaterialChoice(Material.ICE)
+            );
+            server.addRecipe(transformRecipe);
+
+            server.updateRecipes();
+            player.discoverRecipe(trimKey);
+            player.discoverRecipe(transformKey);
+            player.discoverRecipe(discKey);
+        });
+        addTest("recipe_book_remove", player -> player.undiscoverRecipe(NamespacedKey.fromString("test:block")));
     }
 
     private void addTest(final String name, final Consumer<Player> runnable) {
         tests.add(new PacketTest(name, runnable));
+    }
+
+    public boolean run(final Player player, final String name) {
+        for (final PacketTest test : tests) {
+            if (test.name().equals(name)) {
+                plugin.getLogger().info("Running test: " + test.name());
+                test.runnable().accept(player);
+                return true;
+            }
+        }
+        return false;
     }
 
     public void run(final Player player) {
@@ -180,5 +233,9 @@ public final class ExtraTests {
     }
 
     private record PacketTest(String name, Consumer<Player> runnable) {
+    }
+
+    public List<String> testNames() {
+        return tests.stream().map(PacketTest::name).toList();
     }
 }

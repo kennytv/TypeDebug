@@ -16,6 +16,7 @@ import org.bukkit.MusicInstrument;
 import org.bukkit.NamespacedKey;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
+import org.bukkit.block.Chest;
 import org.bukkit.block.banner.Pattern;
 import org.bukkit.block.banner.PatternType;
 import org.bukkit.enchantments.Enchantment;
@@ -25,6 +26,7 @@ import org.bukkit.inventory.ItemRarity;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ArmorMeta;
 import org.bukkit.inventory.meta.BannerMeta;
+import org.bukkit.inventory.meta.BlockStateMeta;
 import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.inventory.meta.BundleMeta;
 import org.bukkit.inventory.meta.ColorableArmorMeta;
@@ -184,6 +186,11 @@ public final class ItemTests {
         // TODO container
         // TODO block_state
         // TODO bees
+        meta("lock", Material.CHEST, BlockStateMeta.class, meta -> {
+            final Chest chest = (Chest) meta.getBlockState();
+            chest.setLock("test");
+            meta.setBlockState(chest);
+        });
         // TODO container_loot
     }
 

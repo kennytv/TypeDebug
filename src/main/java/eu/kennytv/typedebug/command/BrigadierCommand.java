@@ -15,7 +15,6 @@ import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
-import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
@@ -46,6 +45,10 @@ public final class BrigadierCommand {
 
             commands.register(cmd.then(literal("printitem").executes(BrigadierCommand::printHandItem)).build(), "Send a message with the current hand item as a hover event");
 
+            commands.register(cmd.then(literal("extra").then(argument("Extra test name", word())
+                .suggests((context, builder) -> suggest(builder, plugin.extraTests().testNames()))
+                .executes(BrigadierCommand::extraTest))).build(), "Run a specific extra test");
+
             commands.register(cmd.then(literal("run")
                 .then(
                     argument("task", word())
@@ -66,6 +69,16 @@ public final class BrigadierCommand {
     private static int reload(final CommandContext<CommandSourceStack> ctx) {
         PLUGIN.reloadConfig();
         ctx.getSource().getSender().sendMessage("Reloaded config");
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int extraTest(final CommandContext<CommandSourceStack> ctx) {
+        final String test = ctx.getArgument("Extra test name", String.class);
+        if (!PLUGIN.extraTests().run((Player) ctx.getSource().getSender(), test)) {
+            return -1;
+        }
+
+        ctx.getSource().getSender().sendMessage("Ran extra test " + test);
         return Command.SINGLE_SUCCESS;
     }
 

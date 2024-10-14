@@ -96,7 +96,13 @@ public final class SpaghetCommand extends Command {
                 TranslationTest.run(player);
                 break;
             case "extras":
-                PLUGIN.extraTests().run(player);
+                if (extra.length == 1) {
+                    if (!PLUGIN.extraTests().run(player, extra[0])) {
+                        player.sendMessage("Unknown test: " + extra[0]);
+                    }
+                } else {
+                    PLUGIN.extraTests().run(player);
+                }
                 break;
             default:
                 return false;
