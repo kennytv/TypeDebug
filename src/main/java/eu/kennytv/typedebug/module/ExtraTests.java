@@ -27,6 +27,7 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.WanderingTrader;
 import org.bukkit.event.inventory.InventoryType;
+import org.bukkit.inventory.FurnaceRecipe;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.RecipeChoice;
@@ -162,42 +163,7 @@ public final class ExtraTests {
             progress.awardCriteria("stone");
             progress.revokeCriteria("stone");
         });
-        addTest("update_recipes", player -> {
-            final Server server = plugin.getServer();
-            server.resetRecipes();
-
-            server.removeRecipe(NamespacedKey.minecraft("charcoal"));
-
-            final NamespacedKey discKey = NamespacedKey.fromString("typedebug:disc");
-            final ShapedRecipe discRecipe = new ShapedRecipe(discKey, new ItemStack(Material.MUSIC_DISC_11));
-            discRecipe.shape("#A#", "#A#", "#A#");
-            discRecipe.setIngredient('A', Material.DIAMOND);
-            server.addRecipe(discRecipe);
-
-            final NamespacedKey trimKey = NamespacedKey.fromString("typedebug:trim");
-            final SmithingTrimRecipe trimRecipe = new SmithingTrimRecipe(
-                trimKey,
-                new RecipeChoice.MaterialChoice(Material.PAPER),
-                new RecipeChoice.MaterialChoice(Material.LEATHER_CHESTPLATE),
-                new RecipeChoice.MaterialChoice(Material.ICE)
-            );
-            server.addRecipe(trimRecipe);
-
-            final NamespacedKey transformKey = NamespacedKey.fromString("typedebug:transform");
-            final SmithingTransformRecipe transformRecipe = new SmithingTransformRecipe(
-                transformKey,
-                new ItemStack(Material.DIAMOND_CHESTPLATE),
-                new RecipeChoice.MaterialChoice(Material.PAPER),
-                new RecipeChoice.MaterialChoice(Material.CHAINMAIL_CHESTPLATE),
-                new RecipeChoice.MaterialChoice(Material.ICE)
-            );
-            server.addRecipe(transformRecipe);
-
-            server.updateRecipes();
-            player.discoverRecipe(trimKey);
-            player.discoverRecipe(transformKey);
-            player.discoverRecipe(discKey);
-        });
+        addTest("update_recipes", ExtraTests::updateRecipes);
         addTest("recipe_book_remove", player -> player.undiscoverRecipe(NamespacedKey.fromString("test:block")));
     }
 
@@ -237,5 +203,50 @@ public final class ExtraTests {
 
     public List<String> testNames() {
         return tests.stream().map(PacketTest::name).toList();
+    }
+
+    private static void updateRecipes(final Player player) {
+        final Server server = Bukkit.getServer();
+        server.resetRecipes();
+
+        server.removeRecipe(NamespacedKey.minecraft("charcoal"));
+
+        final NamespacedKey discKey = NamespacedKey.fromString("typedebug:disc");
+        final ShapedRecipe discRecipe = new ShapedRecipe(discKey, new ItemStack(Material.MUSIC_DISC_11));
+        discRecipe.shape("#A#", "#A#", "#A#");
+        discRecipe.setIngredient('A', Material.DIAMOND);
+        server.addRecipe(discRecipe);
+
+        final NamespacedKey trimKey = NamespacedKey.fromString("typedebug:trim");
+        final SmithingTrimRecipe trimRecipe = new SmithingTrimRecipe(
+            trimKey,
+            new RecipeChoice.MaterialChoice(Material.PAPER),
+            new RecipeChoice.MaterialChoice(Material.LEATHER_CHESTPLATE),
+            new RecipeChoice.MaterialChoice(Material.ICE)
+        );
+        server.addRecipe(trimRecipe);
+
+        final NamespacedKey transformKey = NamespacedKey.fromString("typedebug:transform");
+        final SmithingTransformRecipe transformRecipe = new SmithingTransformRecipe(
+            transformKey,
+            new ItemStack(Material.DIAMOND_CHESTPLATE),
+            new RecipeChoice.MaterialChoice(Material.PAPER),
+            new RecipeChoice.MaterialChoice(Material.CHAINMAIL_CHESTPLATE),
+            new RecipeChoice.MaterialChoice(Material.ICE)
+        );
+        server.addRecipe(transformRecipe);
+
+        final NamespacedKey furnaceKey = NamespacedKey.fromString("typedebug:furnace");
+        final FurnaceRecipe furnaceRecupe = new FurnaceRecipe(
+            furnaceKey,
+            new ItemStack(Material.MUSIC_DISC_11),
+            Material.PAPER, 0, 20
+        );
+        server.addRecipe(furnaceRecupe);
+
+        server.updateRecipes();
+        player.discoverRecipe(furnaceKey);
+        player.discoverRecipe(transformKey);
+        player.discoverRecipe(discKey);
     }
 }

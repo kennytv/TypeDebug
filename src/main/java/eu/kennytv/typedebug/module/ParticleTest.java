@@ -56,30 +56,39 @@ public final class ParticleTest extends BukkitRunnable {
         }
 
         final Particle particle = PARTICLES[i++];
-        if (particle.name().startsWith("LEGACY_")) {
+        final String particleName = particle.name();
+        if (particleName.startsWith("LEGACY_")) {
             // ok Spigot
             stop();
             return;
         }
 
-        plugin.getLogger().info("Spawning " + particle.name());
+        plugin.getLogger().info("Spawning " + particleName);
         final Object data;
-        if (particle.getDataType() == MaterialData.class) {
-            data = new MaterialData(Material.SAND);
-        } else if (particle.getDataType() == ItemStack.class) {
+        final Class<?> dataType = particle.getDataType();
+        final String typeName = dataType.getSimpleName(); // For compat
+        if (particleName.equals("SHRIEK")) {
+            data = 0;
+        } else if (particleName.equals("SCULK_CHARGE")) {
+            data = 0F;
+        } else if (dataType == ItemStack.class) {
             data = new ItemStack(Material.STICK);
-        } else if (particle.getDataType().getSimpleName().equals("BlockData")) {
+        } else if (dataType == Color.class) {
+            data = Color.fromRGB(255, 0, 0);
+        } else if (typeName.equals("BlockData")) {
             data = Bukkit.createBlockData(Material.SAND);
-        } else if (particle.getDataType().getSimpleName().equals("DustOptions")) {
+        } else if (typeName.equals("DustOptions")) {
             data = new Particle.DustOptions(Color.RED, 1);
-        } else if (particle.getDataType().getSimpleName().equals("Vibration")) {
+        } else if (typeName.equals("Vibration")) {
             data = VibrationHandler.getData(location, player);
-        } else if (particle.getDataType().getSimpleName().equals("DustTransition")) {
+        } else if (typeName.equals("DustTransition")) {
             data = new Particle.DustTransition(Color.RED, Color.BLUE, 1);
-        } else if (particle.getDataType() == Void.class) {
+        } else if (dataType == Void.class) {
             data = null;
+        } else if (dataType == MaterialData.class) {
+            data = new MaterialData(Material.SAND);
         } else {
-            plugin.getLogger().severe("Missing data for " + particle.name() + " - " + particle.getDataType().getSimpleName());
+            plugin.getLogger().severe("Missing data for " + particleName + " - " + typeName);
             return;
         }
 
