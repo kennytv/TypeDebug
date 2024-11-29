@@ -9,11 +9,13 @@ import eu.kennytv.typedebug.util.BufferedTask;
 import eu.kennytv.typedebug.util.ComponentUtil;
 import eu.kennytv.typedebug.util.NMSUtil;
 import eu.kennytv.typedebug.util.Version;
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.logging.Level;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Registry;
@@ -41,6 +43,7 @@ public final class TypeDebugPlugin extends JavaPlugin implements Listener {
     private static final Version VERSION;
     private final Settings settings = new Settings(this);
     private final ExtraTests extraTests;
+    private ItemTests itemTests;
     private boolean pause;
 
     static {
@@ -60,7 +63,11 @@ public final class TypeDebugPlugin extends JavaPlugin implements Listener {
     @Override
     public void onEnable() {
         if (VERSION == Version.SANE) {
-            ItemTests.init();
+            try {
+                itemTests = new ItemTests();
+            } catch (final IOException e) {
+                getLogger().log(Level.SEVERE, "Failed to load item tests from items.mcfunction file in root dir", e);
+            }
         }
 
         saveDefaultConfig();
@@ -254,6 +261,10 @@ public final class TypeDebugPlugin extends JavaPlugin implements Listener {
 
 
         }.runTaskTimer(this, settings.itemSpawnDelay(), settings.itemSpawnDelay());
+    }
+
+    public ItemTests itemTests() {
+        return itemTests;
     }
 
     public void togglePause(final CommandSender sender) {

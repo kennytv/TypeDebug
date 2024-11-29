@@ -40,7 +40,7 @@ public final class BrigadierCommand {
             commands.register(cmd.then(literal("reload").executes(BrigadierCommand::reload)).build(), "Reload the config");
 
             commands.register(cmd.then(literal("item").then(argument("Item data component", word())
-                .suggests((context, builder) -> suggest(builder, ItemTests.ITEMS.stream().map(ItemTests.ItemAndKey::key).toList()))
+                .suggests((context, builder) -> suggest(builder, plugin.itemTests().items().stream().map(ItemTests.ItemAndKey::key).toList()))
                 .executes(BrigadierCommand::giveItem))).build(), "Give an item with data");
 
             commands.register(cmd.then(literal("printitem").executes(BrigadierCommand::printHandItem)).build(), "Send a message with the current hand item as a hover event");
@@ -84,7 +84,7 @@ public final class BrigadierCommand {
 
     private static int giveItem(final CommandContext<CommandSourceStack> ctx) {
         final String type = ctx.getArgument("Item data component", String.class);
-        final ItemTests.ItemAndKey item = ItemTests.ITEMS.stream().filter(i -> i.key().equalsIgnoreCase(type)).findAny().orElse(null);
+        final ItemTests.ItemAndKey item = PLUGIN.itemTests().items().stream().filter(i -> i.key().equalsIgnoreCase(type)).findAny().orElse(null);
         if (item == null) {
             ctx.getSource().getSender().sendMessage("No item with data type " + type);
             return -1;
