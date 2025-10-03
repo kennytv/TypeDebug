@@ -26,7 +26,7 @@ public class TypeDebugBootstrap implements PluginBootstrap {
     private static final class ClassLoadingFun {
 
         private static void registerCustomRegistryEntries(final BootstrapContext context) {
-            context.getLifecycleManager().registerEventHandler(RegistryEvents.ENCHANTMENT.freeze().newHandler(event -> event.registry().register(
+            context.getLifecycleManager().registerEventHandler(RegistryEvents.ENCHANTMENT.compose().newHandler(event -> event.registry().register(
                 TypedKey.create(RegistryKey.ENCHANTMENT, Key.key("typedebug:test")),
                 builder -> builder.description(Component.text("Pointy"))
                     .supportedItems(event.getOrCreateTag(ItemTypeTagKeys.SWORDS))
@@ -35,7 +35,7 @@ public class TypeDebugBootstrap implements PluginBootstrap {
                     .weight(10)
                     .minimumCost(EnchantmentRegistryEntry.EnchantmentCost.of(1, 1))
                     .maximumCost(EnchantmentRegistryEntry.EnchantmentCost.of(3, 1))
-                    .activeSlots(EquipmentSlotGroup.ANY)
+                    .activeSlots(EquipmentSlotGroup.BODY, EquipmentSlotGroup.ARMOR, EquipmentSlotGroup.SADDLE)
             )));
         }
     }
