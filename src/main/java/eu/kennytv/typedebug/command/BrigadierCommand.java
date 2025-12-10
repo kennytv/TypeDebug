@@ -13,8 +13,10 @@ import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
@@ -49,6 +51,10 @@ public final class BrigadierCommand {
                 .suggests((context, builder) -> suggest(builder, plugin.extraTests().testNames()))
                 .executes(BrigadierCommand::extraTest))).build(), "Run a specific extra test");
 
+            commands.register(cmd.then(literal("entity").then(argument("Entity type", word())
+                .suggests((context, builder) -> suggest(builder, Arrays.stream(EntityType.values()).filter(t -> t != EntityType.UNKNOWN).map(t -> t.key().asMinimalString()).toList()))
+                .executes(BrigadierCommand::spawnEntity))).build(), "Spawn an entity");
+
             commands.register(cmd.then(literal("run")
                 .then(
                     argument("task", word())
@@ -59,6 +65,20 @@ public final class BrigadierCommand {
                         )
                 )).build(), "Run a task");
         });
+    }
+
+    private static int spawnEntity(final CommandContext<CommandSourceStack> ctx) {
+        final String type = ctx.getArgument("Entity type", String.class);
+        final EntityType entityType = EntityType.fromName(type);
+        if (entityType == null) {
+            ctx.getSource().getSender().sendMessage("No entity with type " + type);
+            return -1;
+        }
+
+        final Player player = (Player) ctx.getSource().getSender();
+        PLUGIN.spawnEntity(player.getWorld(), player.getLocation(), entityType);
+        ctx.getSource().getSender().sendMessage("Spawned entity with type " + type);
+        return Command.SINGLE_SUCCESS;
     }
 
     private static int pause(final CommandContext<CommandSourceStack> ctx) {

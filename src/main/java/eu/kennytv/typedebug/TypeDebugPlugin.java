@@ -165,17 +165,21 @@ public final class TypeDebugPlugin extends JavaPlugin implements Listener {
             @Override
             protected void test(final int i, final Location location) {
                 final EntityType entityType = types.get(i);
-                getLogger().info("Spawning " + entityType.name());
-
-                final Entity entity = world.spawnEntity(location, entityType);
-                if (HAS_ENTITY_SETGRAVITY) {
-                    entity.setGravity(false);
-                }
-                if (HAS_ENTITY_SETINVULNERABLE) {
-                    entity.setInvulnerable(true);
-                }
+                spawnEntity(world, location, entityType);
             }
         }.runTaskTimer(this, settings.entitySpawnDelay(), settings.entitySpawnDelay());
+    }
+
+    public void spawnEntity(final World world, final Location location, final EntityType entityType) {
+        getLogger().info("Spawning " + entityType.name());
+
+        final Entity entity = world.spawnEntity(location, entityType);
+        if (HAS_ENTITY_SETGRAVITY) {
+            entity.setGravity(false);
+        }
+        if (HAS_ENTITY_SETINVULNERABLE) {
+            entity.setInvulnerable(true);
+        }
     }
 
     public void spawnItems(final Player player) {
