@@ -197,14 +197,14 @@ public final class TypeDebugPlugin extends JavaPlugin implements Listener {
                 }
             }
         }
-        spawnItems(player, items, settings.itemsPerTick(), false);
+        spawnItems(player, items, settings.itemsPerTick(), false, true);
     }
 
     private boolean isAir(final Material material) {
         return HAS_MATERIAL_ISAIR ? material.isAir() : material == Material.AIR || material.name().endsWith("_AIR");
     }
 
-    public void spawnItems(final Player player, final List<ItemTests.ItemAndKey> items, final int itemsPerTick, final boolean sendAsComponent) {
+    public void spawnItems(final Player player, final List<ItemTests.ItemAndKey> items, final int itemsPerTick, final boolean sendAsComponent, final boolean removeLast) {
         final World world = player.getWorld();
         final Location location = player.getLocation();
 
@@ -217,7 +217,7 @@ public final class TypeDebugPlugin extends JavaPlugin implements Listener {
                 if (pause) {
                     return;
                 }
-                if (i != 0) {
+                if (i != 0 && removeLast) {
                     // Remove last items
                     for (final Item item : lastItems) {
                         player.getInventory().remove(item.getItemStack());

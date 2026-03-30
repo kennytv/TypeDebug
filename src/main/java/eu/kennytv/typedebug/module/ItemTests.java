@@ -13,7 +13,7 @@ public final class ItemTests {
     private final List<ItemAndKey> items = new ArrayList<>();
 
     public ItemTests() throws IOException {
-        // Load items.mcfunction file froom root dir.
+        // Load items.mcfunction file from root dir.
         // See https://github.com/kennytv/ItemDataComponentExamples
         Files.readString(Path.of("items.mcfunction")).lines().forEach(line -> {
             final String command = line.trim();
