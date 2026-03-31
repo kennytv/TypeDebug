@@ -125,6 +125,7 @@ public final class BrigadierCommand {
         }
 
         ComponentUtil.sendItemHover(player, item, "Hover here");
+        player.performCommand("data get entity @s SelectedItem");
         return Command.SINGLE_SUCCESS;
     }
 
