@@ -13,11 +13,14 @@ import net.kyori.adventure.text.Component;
 import org.bukkit.inventory.EquipmentSlotGroup;
 import org.jetbrains.annotations.NotNull;
 
+import static eu.kennytv.typedebug.util.ReflectionUtil.has;
+
 public class TypeDebugBootstrap implements PluginBootstrap {
 
     @Override
     public void bootstrap(final @NotNull BootstrapContext context) {
-        if (ReflectionUtil.has("io.papermc.paper.registry.data.EnchantmentRegistryEntry")) {
+        if (has("io.papermc.paper.registry.data.EnchantmentRegistryEntry")
+            && has("io.papermc.paper.registry.event.RegistryComposeEvent")) {
             context.getLogger().info("Registering custom enchantments");
             ClassLoadingFun.registerCustomRegistryEntries(context);
         }
