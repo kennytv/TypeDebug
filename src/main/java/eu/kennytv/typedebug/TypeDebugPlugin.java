@@ -85,37 +85,79 @@ public final class TypeDebugPlugin extends JavaPlugin implements Listener {
     }
 
     public void setBlocks(final Player player) throws ReflectiveOperationException {
-        final World world = player.getWorld();
-        final Location location = player.getLocation();
-        int i = 0;
-        boolean forwards = false;
-        final int y = location.getBlockY();
-        int x = location.getBlockX();
-        int z = location.getBlockZ();
-
         final Class<?> blockClass = VERSION.nmsSupplier().clazz("net.minecraft.world.level.block", "Block", "Block");
         final Class<?> blockStateClass = VERSION.nmsSupplier().clazz("net.minecraft.world.level.block.state", "IBlockData", "BlockState");
         final Class<?> craftBlockClass = NMSUtil.cbClass("block.CraftBlock");
-        final Method setTypeAndData = craftBlockClass.getDeclaredMethod("setTypeAndData", blockStateClass, Boolean.TYPE);
-        setTypeAndData.setAccessible(true);
-        for (final Object blockState : (Iterable<?>) blockClass.getDeclaredField(VERSION == Version.SANE ? "BLOCK_STATE_REGISTRY" : "REGISTRY_ID").get(null)) {
-            if (i++ == 100) {
-                // Next row
-                i = 0;
-                forwards = !forwards;
-                z += 2;
-            }
 
-            // Step sideways
-            if (forwards) {
-                x += 2;
-            } else {
-                x -= 2;
-            }
+        boolean staticMethod = true;
+        Method setter;
+        Method getLevel = null;
+        Method getPosition = null;
+        Method getBlockState = null;
+        try {
+            setter = staticSetBlockStateMethod(craftBlockClass, blockStateClass);
+            getPosition = craftBlockClass.getDeclaredMethod("getPosition");
+            getLevel = NMSUtil.cbClass("CraftWorld").getDeclaredMethod("getHandle");
+            getBlockState = Class.forName("net.minecraft.world.level.BlockGetter").getDeclaredMethod("getBlockState", Class.forName("net.minecraft.core.BlockPos"));
+        } catch (final ReflectiveOperationException e) {
+            setter = craftBlockClass.getDeclaredMethod("setTypeAndData", blockStateClass, Boolean.TYPE);
+            setter.setAccessible(true);
+            staticMethod = false;
+        }
+
+        int count = 0;
+        final Iterable<?> blockIterable = (Iterable<?>) blockClass
+            .getDeclaredField(VERSION == Version.SANE ? "BLOCK_STATE_REGISTRY" : "REGISTRY_ID")
+            .get(null);
+        for (final Object o : blockIterable) {
+            count++;
+        }
+
+        final World world = player.getWorld();
+        final Location location = player.getLocation();
+        final int baseX = location.getBlockX();
+        final int baseY = location.getBlockY();
+        final int baseZ = location.getBlockZ();
+        final int cubeSize = (int) Math.ceil(Math.cbrt(count));
+        final int spacing = 3;
+        int index = 0;
+
+        for (final Object blockState : blockIterable) {
+            // flat index to cube coordinates
+            final int xIndex = index % cubeSize;
+            final int yIndex = (index / cubeSize) % cubeSize;
+            final int zIndex = index / (cubeSize * cubeSize);
+
+            final int x = baseX + (xIndex * spacing);
+            final int y = baseY + (yIndex * spacing);
+            final int z = baseZ + (zIndex * spacing);
+
+            index++;
 
             final Block blockAt = world.getBlockAt(x, y, z);
-            setTypeAndData.invoke(blockAt, blockState, false);
+
+            if (staticMethod) {
+                final Object level = getLevel.invoke(world);
+                final Object pos = getPosition.invoke(blockAt);
+                setter.invoke(
+                    null,
+                    level,
+                    pos,
+                    getBlockState.invoke(level, pos),
+                    blockState,
+                    false
+                );
+            } else {
+                setter.invoke(blockAt, blockState, false);
+            }
         }
+    }
+
+    // Latest
+    public Method staticSetBlockStateMethod(final Class<?> craftBlockClass, final Class<?> blockStateClass) throws ReflectiveOperationException {
+        final Class<?> levelAccessorClass = Class.forName("net.minecraft.world.level.LevelAccessor");
+        final Class<?> blockPosClass = Class.forName("net.minecraft.core.BlockPos");
+        return craftBlockClass.getDeclaredMethod("setBlockState", levelAccessorClass, blockPosClass, blockStateClass, blockStateClass, Boolean.TYPE);
     }
 
     public void setBlocksButInBad(final Player player) {
