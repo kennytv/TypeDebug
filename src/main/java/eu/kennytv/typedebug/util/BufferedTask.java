@@ -30,6 +30,7 @@ public abstract class BufferedTask extends BukkitRunnable {
         }
 
         if (i == totalSteps || !player.isOnline()) {
+            PLUGIN.getLogger().info(player.isOnline() ? "Done!" : "Stopping due to player disconnect");
             cancel();
             return;
         }
