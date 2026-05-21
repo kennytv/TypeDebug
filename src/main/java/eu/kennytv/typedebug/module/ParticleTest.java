@@ -51,6 +51,7 @@ public final class ParticleTest extends BukkitRunnable {
             return;
         }
         if (i == PARTICLES.length || !player.isOnline()) {
+            plugin.getLogger().info(player.isOnline() ? "Done!" : "Stopping due to player disconnect");
             stop();
             return;
         }
